@@ -1,38 +1,66 @@
-.App {
-  text-align: center;
+.carousel-outer {
+  position: relative;
+  width: 100%;
 }
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.slide {
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  flex-shrink: 0;
+  width: 100%;
+  height: 400px;
+}
+.text {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-family: sans-serif;
   color: white;
+  font-size: 38px;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
 }
-
-.App-link {
-  color: #61dafb;
+.slide > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
 }
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.carousel__button {
+  position: absolute;
+  bottom: calc(50% - 30px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background-color: hsla(0, 0%, 100%, 0.2);
+  fill: #fff;
+  user-select: none;
+  transition: background-color 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.carousel__button:focus {
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.75);
+}
+.carousel__button--left {
+  left: 5px;
+}
+.carousel__button--right {
+  right: 5px;
+}
+.carousel__icon {
+  height: 46px;
+  width: 46px;
+  fill: #fff;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
