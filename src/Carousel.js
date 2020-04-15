@@ -1,12 +1,12 @@
-import React, { useRef, useEffect, memo, cloneElement } from "react";
+import React, { useRef, useEffect, useState, memo, cloneElement } from "react";
 
 const raf = requestAnimationFrame;
-const doubleRaf = cb => raf(() => raf(cb));
+const doubleRaf = (cb) => raf(() => raf(cb));
 
 const reorderChildren = (children, initial) => {
   return [
     ...children.slice(initial, children.length),
-    ...children.slice(0, initial)
+    ...children.slice(0, initial),
   ];
 };
 
@@ -16,20 +16,20 @@ const patchProps = ({ type, props }) => {
   return { ...rest, "data-src": src };
 };
 
-const patchChildren = children => {
-  return children.map(child => ({
+const patchChildren = (children) => {
+  return children.map((child) => ({
     ...child,
     props: {
       ...patchProps(child),
       children: Array.isArray(child.props.children)
         ? patchChildren(child.props.children)
-        : child.props.children
-    }
+        : child.props.children,
+    },
   }));
 };
 
-const loadImage = img => {
-  return new Promise(resolve => {
+const loadImage = (img) => {
+  return new Promise((resolve) => {
     if (!img.src) {
       img.onload = resolve;
       img.src = img.dataset.src;
@@ -40,7 +40,7 @@ const loadImage = img => {
   });
 };
 
-const loadImages = slide => {
+const loadImages = (slide) => {
   const imgs = Array.from(slide.querySelectorAll("img"));
   return Promise.all(imgs.map(loadImage));
 };
@@ -48,11 +48,11 @@ const loadImages = slide => {
 const styles = {
   position: "relative",
   width: "100%",
-  overflow: "hidden"
+  overflow: "hidden",
 };
 const innerStyles = {
   display: "flex",
-  transition: "transform cubic-bezier(.4, 0, .2, 1)"
+  transition: "transform cubic-bezier(.4, 0, .2, 1)",
 };
 
 const Carousel = ({
@@ -61,9 +61,10 @@ const Carousel = ({
   auto,
   prevButton,
   nextButton,
+  navigation,
   children,
-  current = 2
 }) => {
+  const [current, setCurrent] = useState(0);
   const inner = useRef();
   const interval = useRef();
   const transitioning = useRef();
@@ -120,6 +121,20 @@ const Carousel = ({
     });
   };
 
+  const navClicked = (index) => () => {
+    setCurrent(index);
+  };
+
+  const activateLink = (link, index) => {
+    return cloneElement(link, { onClick: navClicked(index) });
+  };
+  const activateNavigation = (nav) => {
+    return {
+      ...nav,
+      props: { ...nav.props, children: nav.props.children.map(activateLink) },
+    };
+  };
+
   useEffect(() => {
     const first = inner.current.firstChild;
     loadImages(first).then(endTransition);
@@ -133,6 +148,7 @@ const Carousel = ({
       </div>
       {prevButton && cloneElement(prevButton, { onClick: prev })}
       {nextButton && cloneElement(nextButton, { onClick: next })}
+      {navigation && activateNavigation(navigation)}
     </div>
   );
 };

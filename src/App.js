@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import Carousel from "./Carousel";
 import "./App.css";
 
@@ -7,16 +7,14 @@ const prefix = `${host}/images/msem/1920_946/`;
 const slides = [
   { text: "Photo 1", img: "home-bg.jpg" },
   { text: "Photo 2", img: "home-bg-accommodation-1.jpg" },
-  { text: "Photo 3", img: "home-bg-skipasses-1.jpg" }
+  { text: "Photo 3", img: "home-bg-skipasses-1.jpg" },
 ];
 const App = () => {
-  const [current, setCurrent] = useState(0);
   return (
     <div className="App">
       <div className="carousel-outer">
         <Carousel
           auto
-          current={current}
           prevButton={
             <button className="carousel__button carousel__button--left">
               <svg className="carousel__icon" viewBox="0 0 24 24">
@@ -31,6 +29,13 @@ const App = () => {
               </svg>
             </button>
           }
+          navigation={
+            <div className="">
+              {slides.map((_, index) => (
+                <button key={index}>{index}</button>
+              ))}
+            </div>
+          }
         >
           {slides.map((slide, index) => (
             <div className="slide" key={index}>
@@ -39,13 +44,6 @@ const App = () => {
             </div>
           ))}
         </Carousel>
-      </div>
-      <div>
-        {slides.map((_, index) => (
-          <button key={index} onClick={() => setCurrent(index)}>
-            {index}
-          </button>
-        ))}
       </div>
     </div>
   );
