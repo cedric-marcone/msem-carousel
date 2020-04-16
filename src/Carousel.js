@@ -125,10 +125,7 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
   };
 
   const initLink = (link, index) => cloneElement(link, { onClick: goto(index) });
-  const initLinks = (nav) => {
-    const subs = nav.props.children;
-    return { ...nav, props: { ...nav.props, children: subs.map(initLink) } };
-  };
+  const initLinks = (nav) => ({ ...nav, props: { ...nav.props, children: nav.props.children.map(initLink) } });
 
   useEffect(() => {
     original.current = Array.from(inner.current.children);
