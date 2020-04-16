@@ -53,7 +53,7 @@ const innerStyles = {
   transition: "transform cubic-bezier(.4, 0, .2, 1)"
 };
 
-const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextButton, navigation, children }) => {
+const Carousel = ({ duration = 3000, transition = 240, auto, fade, prevButton, nextButton, navigation, children }) => {
   const inner = useRef();
   const original = useRef();
   const interval = useRef();
@@ -78,15 +78,25 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
     const first = el.firstChild;
     const last = el.lastChild;
     loadImages(last).then(() => {
-      el.style.transitionDuration = "0s";
-      el.style.transform = `translate(-100%, 0)`;
-      el.removeChild(last);
-      el.insertBefore(last, first);
-      doubleRaf(() => {
-        el.style.transitionDuration = transitionMs;
-        el.style.transform = `translate(0, 0)`;
-        setTimeout(endTransition, transition);
-      });
+      if (fade) {
+        el.removeChild(last);
+        el.insertBefore(last, first);
+        doubleRaf(() => {
+          last.style.opacity = 1;
+          first.style.opacity = 0;
+          setTimeout(endTransition, transition);
+        });
+      } else {
+        el.style.transitionDuration = "0s";
+        el.style.transform = `translate(-100%, 0)`;
+        el.removeChild(last);
+        el.insertBefore(last, first);
+        doubleRaf(() => {
+          el.style.transitionDuration = transitionMs;
+          el.style.transform = `translate(0, 0)`;
+          setTimeout(endTransition, transition);
+        });
+      }
     });
   };
 
@@ -94,19 +104,32 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
     if (!beginTransition()) return;
     const el = inner.current;
     const first = el.firstChild;
-    loadImages(first.nextSibling).then(() => {
-      el.style.transitionDuration = transitionMs;
-      el.style.transform = `translate(-100%, 0)`;
-      setTimeout(() => {
-        el.style.transitionDuration = "0s";
-        el.style.transform = `translate(0, 0)`;
+    const sibling = first.nextSibling;
+    loadImages(sibling).then(() => {
+      if (fade) {
+        sibling.style.opacity = 1;
+        setTimeout(() => {
+          first.style.opacity = 0;
+          doubleRaf(() => {
+            endTransition();
+          });
+        }, transition);
         el.removeChild(first);
         el.appendChild(first);
-        doubleRaf(() => {
-          el.style.transitionDuration = transitionMs;
-          endTransition();
-        });
-      }, transition);
+      } else {
+        el.style.transform = `translate(-100%, 0)`;
+        el.style.transitionDuration = transitionMs;
+        setTimeout(() => {
+          el.style.transitionDuration = "0s";
+          el.style.transform = `translate(0, 0)`;
+          el.removeChild(first);
+          el.appendChild(first);
+          doubleRaf(() => {
+            el.style.transitionDuration = transitionMs;
+            endTransition();
+          });
+        }, transition);
+      }
     });
   };
 
@@ -114,6 +137,7 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
     if (!beginTransition()) return;
     const initial = original.current;
     loadImages(initial[index]).then(() => {
+      if (fade) initial[index].style.opacity = 1;
       const reordered = reorderChildren(initial, index);
       const el = inner.current;
       reordered.forEach((child) => {
@@ -125,7 +149,14 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
   };
 
   useEffect(() => {
-    original.current = Array.from(inner.current.children);
+    const initial = Array.from(inner.current.children);
+    if (fade) {
+      initial.forEach((child, index) => {
+        if (index > 0) child.style.opacity = 0;
+        child.style.transition = `opacity ${transitionMs} cubic-bezier(.4, 0, .2, 1)`;
+      });
+    }
+    original.current = initial;
     const first = inner.current.firstChild;
     loadImages(first).then(endTransition);
     return beginTransition;
