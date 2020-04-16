@@ -7,7 +7,7 @@ const prefix = `${host}/images/msem/1920_946/`;
 const slides = [
   { text: "Photo 1", img: "home-bg.jpg" },
   { text: "Photo 2", img: "home-bg-accommodation-1.jpg" },
-  { text: "Photo 3", img: "home-bg-skipasses-1.jpg" },
+  { text: "Photo 3", img: "home-bg-skipasses-1.jpg" }
 ];
 const App = () => {
   return (
