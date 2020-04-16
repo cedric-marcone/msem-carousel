@@ -125,7 +125,7 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
   };
 
   const initLink = (link, index) => cloneElement(link, { onClick: goto(index) });
-  const initNavigation = (nav) => {
+  const initLinks = (nav) => {
     const subs = nav.props.children;
     return { ...nav, props: { ...nav.props, children: subs.map(initLink) } };
   };
@@ -144,7 +144,7 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
       </div>
       {prevButton && cloneElement(prevButton, { onClick: prev })}
       {nextButton && cloneElement(nextButton, { onClick: next })}
-      {navigation && initNavigation(navigation)}
+      {navigation && initLinks(navigation)}
     </div>
   );
 };
