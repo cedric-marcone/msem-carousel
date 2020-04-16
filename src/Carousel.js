@@ -15,13 +15,9 @@ const patchProps = ({ type, props }) => {
 const patchChildren = (children) => {
   return children.map((child) => {
     const subs = child.props.children;
-    return {
-      ...child,
-      props: {
-        ...patchProps(child),
-        children: Array.isArray(subs) ? patchChildren(subs) : subs
-      }
-    };
+    const patchedProps = patchProps(child);
+    const patchedChildren = Array.isArray(subs) ? patchChildren(subs) : subs;
+    return { ...child, props: { ...patchedProps, children: patchedChildren } };
   });
 };
 
