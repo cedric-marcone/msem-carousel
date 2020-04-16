@@ -1,17 +1,10 @@
 import React, { useRef, useEffect, memo, cloneElement } from "react";
 
-const doubleRaf = (cb) => requestAnimationFrame(() => requestAnimationFrame(cb));
-
-const reorderChildren = (children, index) => {
-  return [...children.slice(index, children.length), ...children.slice(0, index)];
-};
-
 const patchProps = ({ type, props }) => {
   if (type !== "img") return props;
   const { src, ...rest } = props;
   return { ...rest, "data-src": src };
 };
-
 const patchChildren = (children) => {
   return children.map((child) => {
     const subs = child.props.children;
@@ -19,6 +12,13 @@ const patchChildren = (children) => {
     const patchedChildren = Array.isArray(subs) ? patchChildren(subs) : subs;
     return { ...child, props: { ...patchedProps, children: patchedChildren } };
   });
+};
+
+const patchLink = (goto) => (link, index) => {
+  return cloneElement(link, { onClick: goto(index) });
+};
+const patchLinks = (nav, goto) => {
+  return { ...nav, props: { ...nav.props, children: nav.props.children.map(patchLink(goto)) } };
 };
 
 const loadImage = (img) => {
@@ -32,11 +32,16 @@ const loadImage = (img) => {
     }
   });
 };
-
 const loadImages = (slide) => {
   const imgs = Array.from(slide.querySelectorAll("img"));
   return Promise.all(imgs.map(loadImage));
 };
+
+const reorderChildren = (children, index) => {
+  return [...children.slice(index, children.length), ...children.slice(0, index)];
+};
+
+const doubleRaf = (cb) => requestAnimationFrame(() => requestAnimationFrame(cb));
 
 const styles = {
   position: "relative",
@@ -89,7 +94,6 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
     if (!beginTransition()) return;
     const el = inner.current;
     const first = el.firstChild;
-
     loadImages(first.nextSibling).then(() => {
       el.style.transitionDuration = transitionMs;
       el.style.transform = `translate(-100%, 0)`;
@@ -120,9 +124,6 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
     });
   };
 
-  const initLink = (link, index) => cloneElement(link, { onClick: goto(index) });
-  const initLinks = (nav) => ({ ...nav, props: { ...nav.props, children: nav.props.children.map(initLink) } });
-
   useEffect(() => {
     original.current = Array.from(inner.current.children);
     const first = inner.current.firstChild;
@@ -137,7 +138,7 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
       </div>
       {prevButton && cloneElement(prevButton, { onClick: prev })}
       {nextButton && cloneElement(nextButton, { onClick: next })}
-      {navigation && initLinks(navigation)}
+      {navigation && patchLinks(navigation, goto)}
     </div>
   );
 };
