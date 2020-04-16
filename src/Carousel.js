@@ -112,12 +112,12 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
   };
 
   const goto = (index) => () => {
-    const initial = original.current;
     if (!beginTransition()) return;
-    const el = inner.current;
+    const initial = original.current;
     loadImages(initial[index]).then(() => {
       const reordered = reorderChildren(initial, index);
       reordered.forEach((child) => {
+        const el = inner.current;
         el.removeChild(child);
         el.appendChild(child);
       });
