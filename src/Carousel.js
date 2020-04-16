@@ -1,13 +1,9 @@
-import React, { useRef, useEffect, useState, memo, cloneElement } from "react";
+import React, { useRef, useEffect, memo, cloneElement } from "react";
 
-const raf = requestAnimationFrame;
-const doubleRaf = (cb) => raf(() => raf(cb));
+const doubleRaf = (cb) => requestAnimationFrame(() => requestAnimationFrame(cb));
 
-const reorderChildren = (children, initial) => {
-  return [
-    ...children.slice(initial, children.length),
-    ...children.slice(0, initial),
-  ];
+const reorderChildren = (children, index) => {
+  return [...children.slice(index, children.length), ...children.slice(0, index)];
 };
 
 const patchProps = ({ type, props }) => {
@@ -17,15 +13,16 @@ const patchProps = ({ type, props }) => {
 };
 
 const patchChildren = (children) => {
-  return children.map((child) => ({
-    ...child,
-    props: {
-      ...patchProps(child),
-      children: Array.isArray(child.props.children)
-        ? patchChildren(child.props.children)
-        : child.props.children,
-    },
-  }));
+  return children.map((child) => {
+    const subs = child.props.children;
+    return {
+      ...child,
+      props: {
+        ...patchProps(child),
+        children: Array.isArray(subs) ? patchChildren(subs) : subs
+      }
+    };
+  });
 };
 
 const loadImage = (img) => {
@@ -48,24 +45,16 @@ const loadImages = (slide) => {
 const styles = {
   position: "relative",
   width: "100%",
-  overflow: "hidden",
+  overflow: "hidden"
 };
 const innerStyles = {
   display: "flex",
-  transition: "transform cubic-bezier(.4, 0, .2, 1)",
+  transition: "transform cubic-bezier(.4, 0, .2, 1)"
 };
 
-const Carousel = ({
-  duration = 3000,
-  transition = 240,
-  auto,
-  prevButton,
-  nextButton,
-  navigation,
-  children,
-}) => {
-  const [current, setCurrent] = useState(0);
+const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextButton, navigation, children }) => {
   const inner = useRef();
+  const original = useRef();
   const interval = useRef();
   const transitioning = useRef();
   const transitionMs = `${transition}ms`;
@@ -79,6 +68,7 @@ const Carousel = ({
 
   const endTransition = () => {
     transitioning.current = false;
+    clearInterval(interval.current);
     if (auto) interval.current = setInterval(next, duration);
   };
 
@@ -121,21 +111,28 @@ const Carousel = ({
     });
   };
 
-  const navClicked = (index) => () => {
-    setCurrent(index);
+  const goto = (index) => () => {
+    const initial = original.current;
+    if (!beginTransition()) return;
+    const el = inner.current;
+    loadImages(initial[index]).then(() => {
+      const reordered = reorderChildren(initial, index);
+      reordered.forEach((child) => {
+        el.removeChild(child);
+        el.appendChild(child);
+      });
+      endTransition();
+    });
   };
 
-  const activateLink = (link, index) => {
-    return cloneElement(link, { onClick: navClicked(index) });
-  };
-  const activateNavigation = (nav) => {
-    return {
-      ...nav,
-      props: { ...nav.props, children: nav.props.children.map(activateLink) },
-    };
+  const initLink = (link, index) => cloneElement(link, { onClick: goto(index) });
+  const initNavigation = (nav) => {
+    const subs = nav.props.children;
+    return { ...nav, props: { ...nav.props, children: subs.map(initLink) } };
   };
 
   useEffect(() => {
+    original.current = Array.from(inner.current.children);
     const first = inner.current.firstChild;
     loadImages(first).then(endTransition);
     return beginTransition;
@@ -144,11 +141,11 @@ const Carousel = ({
   return (
     <div style={styles}>
       <div style={innerStyles} ref={inner}>
-        {patchChildren(reorderChildren(children, current))}
+        {patchChildren(children)}
       </div>
       {prevButton && cloneElement(prevButton, { onClick: prev })}
       {nextButton && cloneElement(nextButton, { onClick: next })}
-      {navigation && activateNavigation(navigation)}
+      {navigation && initNavigation(navigation)}
     </div>
   );
 };
