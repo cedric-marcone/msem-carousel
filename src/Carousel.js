@@ -68,7 +68,6 @@ const Carousel = ({ duration = 3000, transition = 240, auto, prevButton, nextBut
 
   const endTransition = () => {
     transitioning.current = false;
-    clearInterval(interval.current);
     if (auto) interval.current = setInterval(next, duration);
   };
 
