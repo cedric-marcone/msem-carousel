@@ -63,6 +63,9 @@ const fadeHooks = (duration) => ({
   },
   postNext: (_, first) => {
     first.style.opacity = 0;
+  },
+  goto: (initial, target) => {
+    initial.forEach((el, index) => (el.style.opacity = target === index ? 1 : 0));
   }
 });
 
@@ -83,7 +86,8 @@ const moveHooks = (duration) => ({
   postNext: (inner) => {
     inner.style.transitionDuration = "0s";
     inner.style.transform = `translate(0, 0)`;
-  }
+  },
+  goto: () => {}
 });
 
 const styles = {
@@ -153,7 +157,7 @@ const Carousel = ({ duration = 3000, transition = 240, auto, fade, prevButton, n
     if (!beginTransition()) return;
     const initial = original.current;
     loadImages(initial[index]).then(() => {
-      if (fade) initial[index].style.opacity = 1;
+      hooks.goto(initial, index);
       const reordered = reorderChildren(initial, index);
       const el = inner.current;
       reordered.forEach((child) => {

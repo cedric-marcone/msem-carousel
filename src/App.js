@@ -15,6 +15,7 @@ const App = () => {
       <div className="carousel-outer">
         <Carousel
           auto
+          fade
           prevButton={
             <button className="carousel__button carousel__button--left">
               <svg className="carousel__icon" viewBox="0 0 24 24">
