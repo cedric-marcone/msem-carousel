@@ -43,6 +43,16 @@ const reorderChildren = (children, index) => {
 
 const doubleRaf = (cb) => requestAnimationFrame(() => requestAnimationFrame(cb));
 
+const initFadeStyles = (slides, duration) => {
+  slides.forEach(({ style }, index) =>
+    Object.assign(style, {
+      transition: `opacity ${duration} cubic-bezier(.4, 0, .2, 1)`,
+      opacity: index ? 0 : 1,
+      position: index ? "absolute" : undefined
+    })
+  );
+};
+
 const styles = {
   position: "relative",
   width: "100%",
@@ -53,12 +63,47 @@ const innerStyles = {
   transition: "transform cubic-bezier(.4, 0, .2, 1)"
 };
 
+const fadeHooks = () => ({
+  prePrev: () => {},
+  postPrev: (_, first, last) => {
+    last.style.opacity = 1;
+    first.style.opacity = 0;
+  },
+  preNext: (_, sibling) => {
+    sibling.style.opacity = 1;
+  },
+  postNext: (_, first) => {
+    first.style.opacity = 0;
+  }
+});
+
+const moveHooks = (transitionMs) => ({
+  prePrev: (inner) => {
+    inner.style.transitionDuration = "0s";
+    inner.style.transform = `translate(-100%, 0)`;
+  },
+  postPrev: (inner) => {
+    inner.style.transitionDuration = transitionMs;
+    inner.style.transform = `translate(0, 0)`;
+  },
+  preNext: (inner) => {
+    inner.style.transform = `translate(-100%, 0)`;
+    inner.style.transitionDuration = transitionMs;
+  },
+  postNext: (inner) => {
+    inner.style.transitionDuration = "0s";
+    inner.style.transform = `translate(0, 0)`;
+  }
+});
+
 const Carousel = ({ duration = 3000, transition = 240, auto, fade, prevButton, nextButton, navigation, children }) => {
   const inner = useRef();
   const original = useRef();
   const interval = useRef();
   const transitioning = useRef();
   const transitionMs = `${transition}ms`;
+  const targetHooks = fade ? fadeHooks : moveHooks;
+  const hooks = targetHooks(transitionMs);
 
   const beginTransition = () => {
     if (transitioning.current) return false;
@@ -78,25 +123,13 @@ const Carousel = ({ duration = 3000, transition = 240, auto, fade, prevButton, n
     const first = el.firstChild;
     const last = el.lastChild;
     loadImages(last).then(() => {
-      if (fade) {
-        el.removeChild(last);
-        el.insertBefore(last, first);
-        doubleRaf(() => {
-          last.style.opacity = 1;
-          first.style.opacity = 0;
-          setTimeout(endTransition, transition);
-        });
-      } else {
-        el.style.transitionDuration = "0s";
-        el.style.transform = `translate(-100%, 0)`;
-        el.removeChild(last);
-        el.insertBefore(last, first);
-        doubleRaf(() => {
-          el.style.transitionDuration = transitionMs;
-          el.style.transform = `translate(0, 0)`;
-          setTimeout(endTransition, transition);
-        });
-      }
+      hooks.prePrev(el, first, last);
+      el.removeChild(last);
+      el.insertBefore(last, first);
+      doubleRaf(() => {
+        hooks.postPrev(el, first, last);
+        setTimeout(endTransition, transition);
+      });
     });
   };
 
@@ -106,30 +139,13 @@ const Carousel = ({ duration = 3000, transition = 240, auto, fade, prevButton, n
     const first = el.firstChild;
     const sibling = first.nextSibling;
     loadImages(sibling).then(() => {
-      if (fade) {
-        sibling.style.opacity = 1;
-        setTimeout(() => {
-          first.style.opacity = 0;
-          doubleRaf(() => {
-            endTransition();
-          });
-        }, transition);
+      hooks.preNext(el, sibling);
+      setTimeout(() => {
+        hooks.postNext(el, first);
         el.removeChild(first);
         el.appendChild(first);
-      } else {
-        el.style.transform = `translate(-100%, 0)`;
-        el.style.transitionDuration = transitionMs;
-        setTimeout(() => {
-          el.style.transitionDuration = "0s";
-          el.style.transform = `translate(0, 0)`;
-          el.removeChild(first);
-          el.appendChild(first);
-          doubleRaf(() => {
-            el.style.transitionDuration = transitionMs;
-            endTransition();
-          });
-        }, transition);
-      }
+        doubleRaf(endTransition);
+      }, transition);
     });
   };
 
@@ -150,13 +166,8 @@ const Carousel = ({ duration = 3000, transition = 240, auto, fade, prevButton, n
 
   useEffect(() => {
     const initial = Array.from(inner.current.children);
-    if (fade) {
-      initial.forEach((child, index) => {
-        if (index > 0) child.style.opacity = 0;
-        child.style.transition = `opacity ${transitionMs} cubic-bezier(.4, 0, .2, 1)`;
-      });
-    }
     original.current = initial;
+    if (fade) initFadeStyles(initial, transitionMs);
     const first = inner.current.firstChild;
     loadImages(first).then(endTransition);
     return beginTransition;
