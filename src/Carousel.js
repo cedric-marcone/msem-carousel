@@ -58,11 +58,13 @@ const fadeHooks = (duration) => ({
     last.style.opacity = 1;
     first.style.opacity = 0;
   },
-  preNext: (_, sibling) => {
-    sibling.style.opacity = 1;
-  },
-  postNext: (_, first) => {
+  preNext: (_, first, next) => {
     first.style.opacity = 0;
+    next.style.opacity = 1;
+  },
+  postNext: (_, first, next) => {
+    first.style.opacity = 0;
+    next.style.opacity = 1;
   },
   goto: (initial, target) => {
     initial.forEach((el, index) => (el.style.opacity = target === index ? 1 : 0));
@@ -141,11 +143,11 @@ const Carousel = ({ duration = 3000, transition = 240, auto, fade, prevButton, n
     if (!beginTransition()) return;
     const el = inner.current;
     const first = el.firstChild;
-    const sibling = first.nextSibling;
-    loadImages(sibling).then(() => {
-      hooks.preNext(el, sibling);
+    const next = first.nextSibling;
+    loadImages(next).then(() => {
+      hooks.preNext(el, first, next);
       setTimeout(() => {
-        hooks.postNext(el, first);
+        hooks.postNext(el, first, next);
         el.removeChild(first);
         el.appendChild(first);
         doubleRaf(endTransition);
