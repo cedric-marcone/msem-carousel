@@ -43,27 +43,16 @@ const reorderChildren = (children, index) => {
 
 const doubleRaf = (cb) => requestAnimationFrame(() => requestAnimationFrame(cb));
 
-const initFadeStyles = (slides, duration) => {
-  slides.forEach(({ style }, index) =>
-    Object.assign(style, {
-      transition: `opacity ${duration} cubic-bezier(.4, 0, .2, 1)`,
-      opacity: index ? 0 : 1,
-      position: index ? "absolute" : undefined
-    })
-  );
-};
-
-const styles = {
-  position: "relative",
-  width: "100%",
-  overflow: "hidden"
-};
-const innerStyles = {
-  display: "flex",
-  transition: "transform cubic-bezier(.4, 0, .2, 1)"
-};
-
-const fadeHooks = () => ({
+const fadeHooks = (duration) => ({
+  init: (slides) => {
+    slides.forEach(({ style }, index) =>
+      Object.assign(style, {
+        transition: `opacity ${duration} cubic-bezier(.4, 0, .2, 1)`,
+        opacity: index ? 0 : 1,
+        position: index ? "absolute" : undefined
+      })
+    );
+  },
   prePrev: () => {},
   postPrev: (_, first, last) => {
     last.style.opacity = 1;
@@ -77,24 +66,35 @@ const fadeHooks = () => ({
   }
 });
 
-const moveHooks = (transitionMs) => ({
+const moveHooks = (duration) => ({
+  init: () => {},
   prePrev: (inner) => {
     inner.style.transitionDuration = "0s";
     inner.style.transform = `translate(-100%, 0)`;
   },
   postPrev: (inner) => {
-    inner.style.transitionDuration = transitionMs;
+    inner.style.transitionDuration = duration;
     inner.style.transform = `translate(0, 0)`;
   },
   preNext: (inner) => {
     inner.style.transform = `translate(-100%, 0)`;
-    inner.style.transitionDuration = transitionMs;
+    inner.style.transitionDuration = duration;
   },
   postNext: (inner) => {
     inner.style.transitionDuration = "0s";
     inner.style.transform = `translate(0, 0)`;
   }
 });
+
+const styles = {
+  position: "relative",
+  width: "100%",
+  overflow: "hidden"
+};
+const innerStyles = {
+  display: "flex",
+  transition: "transform cubic-bezier(.4, 0, .2, 1)"
+};
 
 const Carousel = ({ duration = 3000, transition = 240, auto, fade, prevButton, nextButton, navigation, children }) => {
   const inner = useRef();
@@ -167,7 +167,7 @@ const Carousel = ({ duration = 3000, transition = 240, auto, fade, prevButton, n
   useEffect(() => {
     const initial = Array.from(inner.current.children);
     original.current = initial;
-    if (fade) initFadeStyles(initial, transitionMs);
+    hooks.init(initial);
     const first = inner.current.firstChild;
     loadImages(first).then(endTransition);
     return beginTransition;
